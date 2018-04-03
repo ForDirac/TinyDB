@@ -27,7 +27,7 @@ class Pair(object):
 
     def delete(self, pair) -> None:
         assert(self.key == pair.key)
-        assert(len(pair.value) == 0)
+        assert(len(self.value) >= 2)
         assert(pair.value[0] in self.value)
         self.value.remove(pair.value[0])
 
@@ -173,23 +173,26 @@ class Node(object):
 
     def delete(self, pair):
         root = self
-        is_leaf, node, i = self._is_leaf(pair)
-        if not i:
+        is_leaf, node, i,pair, duplicate_key = self._is_leaf(pair)
+        if i is None:
             print("** No such value **")
+            return root
+        if duplicate_key:
             return root
         # not leaf
         if not is_leaf:
-            node = node.children[i+1]._find_leftmost_leaf(self)
+            node = node.children[i+1]._find_leftmost_leaf()
             next_pair = node.pairs[0]
             pair.exchange(next_pair)
-        node._remove_pair(next_pair)
+            pair = next_pair
+        node._remove_pair(pair)
         # underflow
         if node.length < int(node.order / 2):
             root = node._recover()
         return root
 
     def _find_leftmost_leaf(self):
-        left_node = self.chilren[0]
+        left_node = self.children[0]
         if not left_node:
             return self
         return left_node._find_leftmost_leaf()
@@ -205,21 +208,24 @@ class Node(object):
         for i, pair in enumerate(self.pairs):
             if not pair:
                 if not self.children[i]:
-                    return False, self, None
+                    return False, self, None, None, False
                 return self.children[i]._is_leaf(target)
             r = target.is_less_than(pair)
             if r == 1:
                 if not self.children[i]:
-                    return False, self, None
+                    return False, self, None, None, False
                 return self.children[i]._is_leaf(target)
             if r == 0:
+                if len(pair.value) >= 2:
+                    pair.delete(target)
+                    return False, self, i, pair, True
                 if not self.children[0]:
-                    return True, self, i
-                return False, self, i
+                    return True, self, i, pair, False
+                return False, self, i, pair, False
             if r == -1:
                 continue
         if not self.children[i+1]:
-            return False, self, None
+            return False, self, None, None, False
         return self.children[i+1]._remove_seat(target)
 
     def _recover(self):
@@ -255,17 +261,20 @@ class Node(object):
         if left_node:
             assert(self.parent is left_node.parent)
             btw_pair = self.parent.pairs.pop(self_idx-1)
+            self.parent.pairs.append(None)
             self.parent.children.pop(self_idx)
+            self.parent.children.append(None)
 
             left_node._insert_pair(left_node.length, btw_pair)
             for i, p in enumerate(self.pairs):
                 if not p:
                     break
-                self.children[i].parent = left_node
+                if self.children[i]: self.children[i].parent = left_node
                 left_node.children.insert(left_node.length, self.children[i])
                 left_node._insert_pair(left_node.length, p)
-            self.children[i+1].parent = left_node
-            left_node.children.insert(left_node.length, self.children[i+1])
+            if len(self.children) > i+1:
+                if self.children[i+1]: self.children[i+1].parent = left_node
+                left_node.children.insert(left_node.length, self.children[i+1])
             if left_node.parent.pairs[0] is None:
                 return left_node
             return left_node.parent._recover()
@@ -273,27 +282,30 @@ class Node(object):
         if right_node:
             assert(self.parent is right_node.parent)
             btw_pair = self.parent.pairs.pop(self_idx)
+            self.parent.pairs.append(None)
             self.parent.children.pop(self_idx+1)
+            self.parent.children.append(None)
 
             self._insert_pair(self.length, btw_pair)
             for i, p in enumerate(right_node.pairs):
                 if not p:
                     break
-                right_node.children[i].parent = self
+                if right_node.children[i]: right_node.children[i].parent = self
                 self.children.insert(self.length, right_node.children[i])
                 self._insert_pair(self.length, p)
-            right_node.children[i+1].parent = self
-            self.children.insert(self.length, right_node.children[i+1])
+            if len(right_node.children) > i+1:
+                if right_node.children[i+1]: right_node.children[i+1].parent = self
+                self.children.insert(self.length, right_node.children[i+1])
             if self.parent.pairs[0] is None:
                 return self
             return self.parent._recover()
 
-        assert(True)
+        assert(False)
 
     def update(self, old_p: Pair, new_p: Pair):
         assert(old_p.value == new_p.value)
-        self.delete(old_p)
-        root = self.insert(new_p)
+        root = self.delete(old_p)
+        root = root.insert(new_p)
         return root
 
 

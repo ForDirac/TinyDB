@@ -22,7 +22,7 @@ class Instance(object):
         self.key = tuple(key)
 
     def __str__(self):
-        return '|'+'|'.join([str(getattr(self, str(sc))) for sc in self.schema]) + '|'
+        return str(self._id)+'. |'+'|'.join([str(getattr(self, str(sc))) for sc in self.schema]) + '|'
 
     def to_pair(self):
         return Pair(self.key, [self._id])
@@ -35,7 +35,7 @@ class Table(object):
         self.contents = []
 
     def show(self):
-        print('|'+'|'.join([str(sc) for sc in self.schema]) + '|')
+        print('-.-|'+'|'.join([str(sc) for sc in self.schema]) + '|')
         for row in self.contents:
             print(row)
 
