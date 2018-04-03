@@ -25,6 +25,14 @@ class Pair(object):
     def insert(self, pair) -> None:
         self.value.extend(pair.value)
 
+    def delete(self, pair) -> None:
+        assert(self.key == pair.key)
+        assert(pair.value[0] in self.value)
+        if len(self.value) == 1:
+            pass
+        pass
+
+
 class Node(object):
     def __init__(self, parent = None, is_root = None):
         self.is_root = is_root or False
@@ -158,7 +166,26 @@ class Node(object):
         return self.children[i].search(key)
 
     def delete(self, pair):
-        pass
+        root = self
+        node, idx = self._remove_seat(pair)
+        if node.length < int(node.order / 2):
+            root = node._recover()
+        return root
+
+    def _remove_seat(self, target):
+        for i, pair in enumerate(self.pairs):
+            if not pair:
+                if not self.children[i]:
+                    return None, None
+                return self.children[i]._remove_seat(target)
+            r = target.is_less_than(pair)
+            if r == 1:
+                if not self.children[i]:
+                    return None, None
+                return self.children[i]._remove_seat(target)
+            if r == 0:
+                pair.delete(target)
+                pass
 
     def update(self, old_p: Pair, new_p: Pair):
         assert(old_p.value == new_p.value)
