@@ -27,10 +27,9 @@ class Pair(object):
 
     def delete(self, pair) -> None:
         assert(self.key == pair.key)
+        assert(len(pair.value) == 0)
         assert(pair.value[0] in self.value)
-        if len(self.value) == 1:
-            pass
-        pass
+        self.value.remove(pair.value[0])
 
 
 class Node(object):
@@ -168,6 +167,9 @@ class Node(object):
     def delete(self, pair):
         root = self
         node, idx = self._remove_seat(pair)
+        if not idx:
+            print("** No such row **")
+            return root
         if node.length < int(node.order / 2):
             root = node._recover()
         return root
@@ -184,8 +186,27 @@ class Node(object):
                     return None, None
                 return self.children[i]._remove_seat(target)
             if r == 0:
-                pair.delete(target)
-                pass
+                if len(pair.value) == 1:
+                    self.pairs.remove(pair)
+                    self.length -= 1
+                else:
+                    pair.delete(target)
+                return self, i
+            if r == -1:
+                continue
+        if not self.children[i+1]:
+            return None, None
+        return self.children[i+1]._remove_seat(target)
+
+    def _recover(self):
+        assert(self.length < self.order)
+        assert(self.length >= int(self.order/2) - 1)
+        if not self.length < int(self.order/2):
+            if self.parent is None:
+                return self
+            return self.parent._recover()
+        if self.parent is None:
+            pass
 
     def update(self, old_p: Pair, new_p: Pair):
         assert(old_p.value == new_p.value)

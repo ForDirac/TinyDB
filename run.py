@@ -37,6 +37,8 @@ if __name__ == '__main__':
     db.show()
     print("\n----SEARCH result----")
     results = db.search((5, '2005-03-24'))
+    if len(results) == 0:
+        print("** No such key **")
     for result in results:
         print(result)
     print("\n----DELETE result----")
